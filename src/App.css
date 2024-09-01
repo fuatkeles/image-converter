@@ -1,38 +1,241 @@
-.App {
+body {
+  background-color: #f0f0f5; /* iOS arka plan rengi */
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+.navbar {
+  width: 100%;
+  max-width: 1200px; /* Siyah arka plan rengi */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
+  position: fixed;
+  top: 0;
+  z-index: 1000;
+}
+
+.navbar-brand {
+  font-size: 24px;
+  font-weight: bold;
+  color: #000000; /* Beyaz metin rengi */
+  font-weight: 800;
+}
+
+.navbar-links {
+  display: flex;
+  gap: 15px;
+}
+
+.navbar-link {
+  font-size: 20px;
+  
+  text-decoration: none;
+  padding: 10px 15px;
+  transition: background-color 0.3s;
+  color: #000000; /* Beyaz metin rengi */
+  font-weight: 800;
+}
+
+
+
+.navbar-button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s;
+}
+
+.login-button {
+  background-color: #000000; /* Mavi arka plan rengi */
+  color: white;
+  border: 2px solid #000000;
+  font-weight: 800;
+}
+
+.login-button:hover {
+  background-color:  white; /* Hover durumunda koyu mavi arka plan */
+  color: #000000;
+}
+
+.signup-button {
+  background-color: white;
+  color: #000000; /* Mavi metin rengi */
+  border: 2px solid #000000;
+  font-weight: 800;
+}
+
+.signup-button:hover {
+  background-color: #000000; /* Hover durumunda açık gri arka plan */
+  color: white;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  padding-top: 80px; /* Navbar için boşluk bırakır */
+}
+
+.top-container {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 1200px;
+  margin-bottom: 20px;
+  gap: 20px; /* Harita ve dosya yükleme alanı arasına boşluk ekler */
+}
+
+.image-list {
+  width: 100%;
+  max-width: 1200px;
+  list-style-type: none;
+  padding: 0;
+  
+  border-radius: 10px;
+  padding: 10px;
+  background-color: white;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* iOS uyumlu gölge */
+}
+
+.image-list.empty {
+  border: none; /* Liste boş olduğunda sınırı kaldırır */
+  background-color: none; /* Liste boş olduğunda arka plan rengini kaldırır */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100px; /* Yükseklik belirler */
+}
+
+.image-list.empty::after {
+  content: "No images to display. Please upload images."; /* Boş liste etiketi */
+  color: #000000;
+  font-size: 16px;
   text-align: center;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+.map-container {
+  width: 50%;
+  height: 400px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* iOS uyumlu gölge */
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+.upload-container {
+  border: 2px dashed #ccc;
+  border-radius: 10px;
+  width: 50%;
+  height: 400px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-size: calc(10px + 2vmin);
+  position: relative;
+  transition: border-color 0.3s, color 0.3s;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* iOS uyumlu gölge */
+}
+
+.upload-container.active {
+  border-color: #00f;
+  color: #00f;
+}
+
+.upload-input {
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  position: absolute;
+  top: 0;
+  left: 0;
+  cursor: pointer;
+}
+
+.upload-label {
+  font-size: 16px;
+  color: #000000;
+  text-align: center;
+  pointer-events: none;
+  font-weight: 800;
+}
+
+.upload-icon {
+  font-size: 48px; /* Yükleme simgesinin boyutunu ayarlar */
+  color: #000000;
+  margin-bottom: 10px;
+}
+
+.actions-container {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.image-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.image-preview {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 10px;
+  margin-right: 20px;
+}
+
+.image-name {
+  flex-grow: 1;
+  text-align: left;
+}
+
+.button-group {
+  display: flex;
+  gap: 10px;
+}
+
+.ios-button {
+  background-color: #007aff;
   color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 10px;
+  cursor: pointer;
+  margin: 5px;
+  transition: background-color 0.3s;
+  font-weight: 500; /* iOS'e uygun kalınlık */
 }
 
-.App-link {
-  color: #61dafb;
+.ios-button:hover {
+  background-color: #005bb5;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.clear-button {
+  background-color: transparent;
+  border: none;
+  color: red;
+  font-size: 20px;
+  cursor: pointer;
+  margin: 5px;
+}
+
+.add-geotag-button {
+  background-color: #000000;
+  color: white;
+  border: none;
+  padding: 15px 25px; /* Daha büyük boyut */
+  border-radius: 10px;
+  cursor: pointer;
+  margin: 5px;
+  transition: background-color 0.3s;
+  font-weight: 800; /* iOS'e uygun kalınlık */
+}
+
+.add-geotag-button:hover {
+  background-color: #005bb5;
 }

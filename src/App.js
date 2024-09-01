@@ -4,6 +4,10 @@ import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-lea
 import 'leaflet/dist/leaflet.css';
 import { GeoSearchControl, OpenStreetMapProvider } from 'leaflet-geosearch';
 import 'leaflet-geosearch/dist/geosearch.css';
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
+import { FaUpload, FaTimes } from 'react-icons/fa'; // react-icons/fa modülünü içe aktar
+import './App.css'; // Yeni CSS dosyasını içe aktar
 
 function LocationMarker({ location, setLocation }) {
   useMapEvents({
@@ -54,10 +58,27 @@ function App() {
   const [convertedImages, setConvertedImages] = useState({});
   const [location, setLocation] = useState(null);
   const [geotagged, setGeotagged] = useState({});
+  const [isDragActive, setIsDragActive] = useState(false);
 
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
     setImages(files);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragActive(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragActive(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    const files = Array.from(e.dataTransfer.files);
+    setImages(files);
+    setIsDragActive(false);
   };
 
   const handleConvert = async (index) => {
@@ -98,35 +119,101 @@ function App() {
     }
   };
 
+  const handleClear = (index) => {
+    setImages((prev) => prev.filter((_, i) => i !== index));
+    setConvertedImages((prev) => {
+      const newConvertedImages = { ...prev };
+      delete newConvertedImages[index];
+      return newConvertedImages;
+    });
+    setGeotagged((prev) => {
+      const newGeotagged = { ...prev };
+      delete newGeotagged[index];
+      return newGeotagged;
+    });
+  };
+
+  const handleClearAll = () => {
+    setImages([]);
+    setConvertedImages({});
+    setGeotagged({});
+  };
+
   const getWebpFileName = (originalName) => {
     const nameWithoutExtension = originalName.replace(/\.[^/.]+$/, "");
     return `${nameWithoutExtension}.webp`;
   };
 
+  const handleDownloadAll = async () => {
+    const zip = new JSZip();
+    const folder = zip.folder("images");
+
+    for (const [index, url] of Object.entries(convertedImages)) {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      folder.file(getWebpFileName(images[index].name), blob);
+    }
+
+    zip.generateAsync({ type: "blob" }).then((content) => {
+      saveAs(content, "images.zip");
+    });
+  };
+
+  const allConvertedAndGeotagged = images.length > 0 && images.every((_, index) => geotagged[index]);
+
   return (
-    <div>
-      <MapContainer center={[51.505, -0.09]} zoom={13} style={{ height: '400px', width: '100%' }}>
-        <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-        <LocationMarker location={location} setLocation={setLocation} />
-        <SearchControl setLocation={setLocation} />
-      </MapContainer>
-      <input type="file" multiple onChange={handleFileChange} />
-      <ul>
+    <div className="app-container">
+      <nav className="navbar">
+        <div className="navbar-brand">WebTagger</div>
+        <div className="navbar-links">
+          <a href="#about" className="navbar-link">About</a>
+          <button className="navbar-button login-button">Login</button>
+          <button className="navbar-button signup-button">Sign Up</button>
+        </div>
+      </nav>
+      <div className="top-container">
+        <MapContainer center={[51.505, -0.09]} zoom={13} className="map-container">
+          <TileLayer
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          <LocationMarker location={location} setLocation={setLocation} />
+          <SearchControl setLocation={setLocation} />
+        </MapContainer>
+        <div
+          className={`upload-container ${isDragActive ? 'active' : ''}`}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
+          <FaUpload className="upload-icon" /> {/* Yükleme simgesi */}
+          <input type="file" multiple onChange={handleFileChange} className="upload-input" />
+          <label className="upload-label">You can also drag and drop files here.</label>
+        </div>
+      </div>
+      <ul className={`image-list ${images.length === 0 ? 'empty' : ''}`}>
+        {images.length === 0 && <li className="empty-message">No images to display. Please upload images.</li>}
         {images.map((image, index) => (
-          <li key={index}>
-            {image.name}
-            <button onClick={() => handleConvert(index)}>Convert</button>
-            {location && <button onClick={() => handleAddGeotag(index)}>Add Geotag</button>}
-            {geotagged[index] && (
-              <a href={convertedImages[index]} download={getWebpFileName(image.name)}>
-                Download
-              </a>
-            )}
+          <li key={index} className="image-item">
+            <img src={URL.createObjectURL(image)} alt={image.name} className="image-preview" />
+            <span className="image-name">{image.name}</span>
+            <div className="button-group">
+              {location && <button className="add-geotag-button" onClick={() => handleAddGeotag(index)}>Add Geotag</button>}
+              {geotagged[index] && (
+                <a href={convertedImages[index]} download={getWebpFileName(image.name)} className="ios-button">
+                  Download
+                </a>
+              )}
+              <button className="clear-button" onClick={() => handleClear(index)}><FaTimes /></button>
+            </div>
           </li>
         ))}
       </ul>
+      {allConvertedAndGeotagged && (
+        <div className="actions-container">
+          <button className="ios-button" onClick={handleDownloadAll}>Download All</button>
+          <button className="ios-button" onClick={handleClearAll}>Clear All</button>
+        </div>
+      )}
     </div>
   );
 }
