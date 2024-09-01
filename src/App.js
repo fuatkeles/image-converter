@@ -1,14 +1,50 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
+import { GeoSearchControl, OpenStreetMapProvider } from 'leaflet-geosearch';
+import 'leaflet-geosearch/dist/geosearch.css';
 
-function LocationMarker({ setLocation }) {
+function LocationMarker({ location, setLocation }) {
   useMapEvents({
     click(e) {
       setLocation(e.latlng);
     },
   });
+
+  return location ? <Marker position={location} /> : null;
+}
+
+function SearchControl({ setLocation }) {
+  const map = useMap();
+
+  useEffect(() => {
+    const provider = new OpenStreetMapProvider();
+
+    const searchControl = new GeoSearchControl({
+      provider,
+      style: 'bar',
+      showMarker: true,
+      showPopup: false,
+      autoClose: true,
+      retainZoomLevel: false,
+      animateZoom: true,
+      keepResult: true,
+    });
+
+    map.addControl(searchControl);
+
+    map.on('geosearch/showlocation', (result) => {
+      if (result && result.location) {
+        setLocation({
+          lat: result.location.y,
+          lng: result.location.x
+        });
+      }
+    });
+
+    return () => map.removeControl(searchControl);
+  }, [map, setLocation]);
 
   return null;
 }
@@ -40,6 +76,11 @@ function App() {
   };
 
   const handleAddGeotag = async (index) => {
+    if (!location) {
+      console.error('Location is not set');
+      return;
+    }
+
     const formData = new FormData();
     formData.append('image', images[index]);
     formData.append('latitude', location.lat);
@@ -57,14 +98,19 @@ function App() {
     }
   };
 
+  const getWebpFileName = (originalName) => {
+    const nameWithoutExtension = originalName.replace(/\.[^/.]+$/, "");
+    return `${nameWithoutExtension}.webp`;
+  };
+
   return (
     <div>
       <MapContainer center={[51.505, -0.09]} zoom={13} style={{ height: '400px', width: '100%' }}>
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        {location && <Marker position={location} />}
-        <LocationMarker setLocation={setLocation} />
+        <LocationMarker location={location} setLocation={setLocation} />
+        <SearchControl setLocation={setLocation} />
       </MapContainer>
       <input type="file" multiple onChange={handleFileChange} />
       <ul>
@@ -74,7 +120,7 @@ function App() {
             <button onClick={() => handleConvert(index)}>Convert</button>
             {location && <button onClick={() => handleAddGeotag(index)}>Add Geotag</button>}
             {geotagged[index] && (
-              <a href={convertedImages[index]} download={`${image.name}.webp`}>
+              <a href={convertedImages[index]} download={getWebpFileName(image.name)}>
                 Download
               </a>
             )}
