@@ -8,7 +8,7 @@ import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { FaUpload, FaTimes } from 'react-icons/fa'; // react-icons/fa modülünü içe aktar
 import './App.css'; // Yeni CSS dosyasını içe aktar
-
+import { FaCheckCircle } from 'react-icons/fa'; // Import the checkmark icon
 function LocationMarker({ location, setLocation }) {
   useMapEvents({
     click(e) {
@@ -59,6 +59,8 @@ function App() {
   const [location, setLocation] = useState(null);
   const [geotagged, setGeotagged] = useState({});
   const [isDragActive, setIsDragActive] = useState(false);
+  const [newFileName, setNewFileName] = useState('');
+  const [loading, setLoading] = useState({}); // Add this line to the state declarations
 
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
@@ -101,12 +103,17 @@ function App() {
       console.error('Location is not set');
       return;
     }
-
+  
+    setLoading((prev) => ({ ...prev, [index]: true })); // Set loading to true
+  
     const formData = new FormData();
     formData.append('image', images[index]);
     formData.append('latitude', location.lat);
     formData.append('longitude', location.lng);
-
+    if (newFileName) {
+      formData.append('newFileName', newFileName.replace(/\s+/g, '-'));
+    }
+  
     try {
       const response = await axios.post('http://localhost:5001/add-geotag', formData, {
         responseType: 'blob',
@@ -116,6 +123,8 @@ function App() {
       setGeotagged((prev) => ({ ...prev, [index]: true }));
     } catch (error) {
       console.error('Error adding geotag:', error);
+    } finally {
+      setLoading((prev) => ({ ...prev, [index]: false })); // Set loading to false
     }
   };
 
@@ -139,10 +148,15 @@ function App() {
     setGeotagged({});
   };
 
-  const getWebpFileName = (originalName) => {
+  const getWebpFileName = (originalName, newFileName) => {
+    if (newFileName) {
+      const sanitizedFileName = newFileName.replace(/\s+/g, '-');
+      return `${sanitizedFileName}.webp`;
+    }
     const nameWithoutExtension = originalName.replace(/\.[^/.]+$/, "");
     return `${nameWithoutExtension}.webp`;
   };
+
 
   const handleDownloadAll = async () => {
     const zip = new JSZip();
@@ -151,7 +165,7 @@ function App() {
     for (const [index, url] of Object.entries(convertedImages)) {
       const response = await fetch(url);
       const blob = await response.blob();
-      folder.file(getWebpFileName(images[index].name), blob);
+      folder.file(getWebpFileName(images[index].name, newFileName), blob);
     }
 
     zip.generateAsync({ type: "blob" }).then((content) => {
@@ -191,22 +205,32 @@ function App() {
         </div>
       </div>
       <ul className={`image-list ${images.length === 0 ? 'empty' : ''}`}>
-        {images.length === 0 && <li className="empty-message">No images to display. Please upload images.</li>}
-        {images.map((image, index) => (
-          <li key={index} className="image-item">
-            <img src={URL.createObjectURL(image)} alt={image.name} className="image-preview" />
-            <span className="image-name">{image.name}</span>
-            <div className="button-group">
-              {location && <button className="add-geotag-button" onClick={() => handleAddGeotag(index)}>Add Geotag</button>}
-              {geotagged[index] && (
-                <a href={convertedImages[index]} download={getWebpFileName(image.name)} className="ios-button">
-                  Download
-                </a>
-              )}
-              <button className="clear-button" onClick={() => handleClear(index)}><FaTimes /></button>
-            </div>
-          </li>
-        ))}
+      {images.map((image, index) => (
+  <li key={index} className="image-item">
+    <img src={URL.createObjectURL(image)} alt={image.name} className="image-preview" />
+    <span className="image-name">{image.name}</span>
+    <div className="button-group">
+      <input
+        type="text"
+        placeholder="New File Name (optional)"
+        value={newFileName}
+        onChange={(e) => setNewFileName(e.target.value)}
+        className="new-file-name-input"
+      />
+      {location && <button className="add-geotag-button" onClick={() => handleAddGeotag(index)}>Add Geotag</button>}
+      {loading[index] && !geotagged[index] && <div className="loading-circle"></div>} {/* Add loading circle */}
+      {geotagged[index] && (
+        <>
+          <a href={convertedImages[index]} download={getWebpFileName(image.name, newFileName)} className="ios-button">
+            Download
+          </a>
+          <FaCheckCircle className="checkmark-icon" /> {/* Add checkmark icon */}
+        </>
+      )}
+      <button className="clear-button" onClick={() => handleClear(index)}><FaTimes /></button>
+    </div>
+  </li>
+))}
       </ul>
       {allConvertedAndGeotagged && (
         <div className="actions-container">

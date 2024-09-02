@@ -196,19 +196,26 @@ body {
 
 .button-group {
   display: flex;
-  gap: 10px;
+  flex-direction: row; /* Align buttons side by side */
+  gap: 8px;
+  align-items: center; /* Center buttons vertically */
+  justify-content: center; /* Center buttons horizontally */
+  width: 100%; /* Ensure the button group takes full width */
+  max-width: 600px; /* Set a maximum width */
+  margin: 0 auto; /* Center the button group */
 }
 
 .ios-button {
   background-color: #007aff;
   color: white;
   border: none;
-  padding: 10px 20px;
+  text-decoration: none;
+  padding: 12px 20px;
   border-radius: 10px;
   cursor: pointer;
   margin: 5px;
   transition: background-color 0.3s;
-  font-weight: 500; /* iOS'e uygun kalınlık */
+  font-weight: 800; /* iOS'e uygun kalınlık */
 }
 
 .ios-button:hover {
@@ -228,14 +235,60 @@ body {
   background-color: #000000;
   color: white;
   border: none;
-  padding: 15px 25px; /* Daha büyük boyut */
+  padding: 15px 30px; /* Increase horizontal padding */
   border-radius: 10px;
   cursor: pointer;
   margin: 5px;
   transition: background-color 0.3s;
-  font-weight: 800; /* iOS'e uygun kalınlık */
+  font-weight: 900; /* iOS'e uygun kalınlık */
+  white-space: nowrap; /* Ensure text stays on one line */
 }
 
 .add-geotag-button:hover {
   background-color: #005bb5;
+}
+
+.new-file-name-input {
+  width: 90%; /* Increase the width */
+  max-width: 250px; /* Set a maximum width */
+  padding: 10px;
+  margin: 10px auto; /* Center the textbox horizontally and add vertical margin */
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 16px;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: border-color 0.3s, box-shadow 0.3s;
+  display: block; /* Ensure the textbox is a block element */
+}
+
+.new-file-name-input:focus {
+  border-color: #007aff;
+  box-shadow: 0 0 5px rgba(0, 122, 255, 0.5);
+  outline: none;
+}
+
+.new-file-name-input::placeholder {
+  color: #888; /* Improve placeholder visibility */
+  font-style: normal; /* Make placeholder text normal style */
+}
+
+.loading-circle {
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-left-color: #007aff;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  animation: spin 1s linear infinite;
+  margin-left: 10px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.checkmark-icon {
+  color: #4caf50; /* Green color for the checkmark */
+  font-size: 75px; /* Adjust the size as needed */
+  margin-left: 10px;
 }

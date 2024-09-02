@@ -1,16 +1,29 @@
+const path = require('path');
+const cors = require('cors');
 const express = require('express');
 const multer = require('multer');
 const sharp = require('sharp');
-const cors = require('cors');
-const { exiftool } = require('exiftool-vendored');
 const fs = require('fs');
-const path = require('path');
+const exiftool = require('exiftool-vendored').exiftool;
 
 const app = express();
 const upload = multer();
 
 app.use(cors());
 app.use(express.json()); // JSON verilerini işlemek için gerekli
+
+// Function to schedule file deletion
+const scheduleFileDeletion = (filePath, timeout = 5 * 60 * 1000) => {
+  setTimeout(() => {
+    fs.unlink(filePath, (err) => {
+      if (err) {
+        console.error(`Failed to delete file: ${filePath}`, err);
+      } else {
+        console.log(`File deleted: ${filePath}`);
+      }
+    });
+  }, timeout);
+};
 
 app.post('/convert', upload.single('image'), async (req, res) => {
   try {
@@ -24,14 +37,17 @@ app.post('/convert', upload.single('image'), async (req, res) => {
 });
 
 app.post('/add-geotag', upload.single('image'), async (req, res) => {
-  const { latitude, longitude } = req.body;
-  console.log('Received geotag data:', { latitude, longitude });
+  const { latitude, longitude, newFileName } = req.body;
+  console.log('Received geotag data:', { latitude, longitude, newFileName });
   try {
     const webpBuffer = await sharp(req.file.buffer).webp().toBuffer();
     const tempFilePath = path.join(__dirname, `temp-${Date.now()}.webp`);
 
     // Save the buffer to a temporary file
     await fs.promises.writeFile(tempFilePath, webpBuffer);
+
+    // Schedule file deletion within 5 minutes
+    scheduleFileDeletion(tempFilePath);
 
     // Add EXIF metadata
     await exiftool.write(tempFilePath, {
@@ -41,21 +57,29 @@ app.post('/add-geotag', upload.single('image'), async (req, res) => {
       GPSLongitudeRef: longitude >= 0 ? 'E' : 'W',
     });
 
-    // Read the file back into a buffer
-    const taggedBuffer = await fs.promises.readFile(tempFilePath);
-
-    // Clean up the temporary file
-    await fs.promises.unlink(tempFilePath);
-
-    res.set('Content-Type', 'image/webp');
-    res.send(taggedBuffer);
+    res.send('Geotag added successfully');
   } catch (error) {
     console.error('Error adding geotag:', error);
     res.status(500).send('Error adding geotag');
   }
 });
 
-const PORT = process.env.PORT || 5001;
+app.post('/download', async (req, res) => {
+  const { filePath } = req.body;
+  console.log('Download requested for file:', filePath);
+
+  // Schedule file deletion within 5 minutes
+  scheduleFileDeletion(filePath);
+
+  res.download(filePath, (err) => {
+    if (err) {
+      console.error('Error downloading file:', err);
+      res.status(500).send('Error downloading file');
+    }
+  });
+});
+
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
