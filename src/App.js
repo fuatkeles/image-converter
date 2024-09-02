@@ -119,7 +119,8 @@ function App() {
         responseType: 'blob',
       });
       const url = URL.createObjectURL(response.data);
-      setConvertedImages((prev) => ({ ...prev, [index]: url }));
+      const altText = newFileName ? newFileName.replace(/\s+/g, '-') : images[index].name;
+      setConvertedImages((prev) => ({ ...prev, [index]: { url, altText } }));
       setGeotagged((prev) => ({ ...prev, [index]: true }));
     } catch (error) {
       console.error('Error adding geotag:', error);
