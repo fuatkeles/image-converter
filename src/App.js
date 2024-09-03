@@ -59,12 +59,20 @@ function App() {
   const [location, setLocation] = useState(null);
   const [geotagged, setGeotagged] = useState({});
   const [isDragActive, setIsDragActive] = useState(false);
-  const [newFileName, setNewFileName] = useState('');
+  const [fileNames, setFileNames] = useState([]);
   const [loading, setLoading] = useState({}); // Add this line to the state declarations
+  
 
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
     setImages(files);
+    setFileNames(files.map(file => file.name));
+  };
+
+  const handleFileNameChange = (index, newFileName) => {
+    const updatedFileNames = [...fileNames];
+    updatedFileNames[index] = newFileName;
+    setFileNames(updatedFileNames);
   };
 
   const handleDragOver = (e) => {
@@ -80,6 +88,7 @@ function App() {
     e.preventDefault();
     const files = Array.from(e.dataTransfer.files);
     setImages(files);
+    setFileNames(files.map(file => file.name));
     setIsDragActive(false);
   };
 
@@ -99,35 +108,36 @@ function App() {
   };
 
   const handleAddGeotag = async (index) => {
-    if (!location) {
-      console.error('Location is not set');
-      return;
-    }
-  
-    setLoading((prev) => ({ ...prev, [index]: true })); // Set loading to true
-  
-    const formData = new FormData();
-    formData.append('image', images[index]);
-    formData.append('latitude', location.lat);
-    formData.append('longitude', location.lng);
-    if (newFileName) {
-      formData.append('newFileName', newFileName.replace(/\s+/g, '-'));
-    }
-  
-    try {
-      const response = await axios.post('http://localhost:5001/add-geotag', formData, {
-        responseType: 'blob',
-      });
-      const url = URL.createObjectURL(response.data);
-      const altText = newFileName ? newFileName.replace(/\s+/g, '-') : images[index].name;
-      setConvertedImages((prev) => ({ ...prev, [index]: { url, altText } }));
-      setGeotagged((prev) => ({ ...prev, [index]: true }));
-    } catch (error) {
-      console.error('Error adding geotag:', error);
-    } finally {
-      setLoading((prev) => ({ ...prev, [index]: false })); // Set loading to false
-    }
-  };
+      const newFileName = fileNames[index].replace(/\s+/g, '_'); // Örnek: Dosya adındaki boşlukları alt çizgi ile değiştir
+      if (!location) {
+        console.error('Location is not set');
+        return;
+      }
+    
+      setLoading((prev) => ({ ...prev, [index]: true })); // Set loading to true
+    
+      const formData = new FormData();
+      formData.append('image', images[index]);
+      formData.append('latitude', location.lat);
+      formData.append('longitude', location.lng);
+      if (newFileName) {
+        formData.append('newFileName', newFileName.replace(/\s+/g, '-'));
+      }
+    
+      try {
+        const response = await axios.post('http://localhost:5001/add-geotag', formData, {
+          responseType: 'blob',
+        });
+        const url = URL.createObjectURL(response.data);
+        const altText = newFileName ? newFileName.replace(/\s+/g, '-') : images[index].name;
+        setConvertedImages((prev) => ({ ...prev, [index]: { url, altText } }));
+        setGeotagged((prev) => ({ ...prev, [index]: true }));
+      } catch (error) {
+        console.error('Error adding geotag:', error);
+      } finally {
+        setLoading((prev) => ({ ...prev, [index]: false })); // Set loading to false
+      }
+    };
 
   const handleClear = (index) => {
     setImages((prev) => prev.filter((_, i) => i !== index));
@@ -157,24 +167,48 @@ function App() {
     const nameWithoutExtension = originalName.replace(/\.[^/.]+$/, "");
     return `${nameWithoutExtension}.webp`;
   };
-
+  
 
   const handleDownloadAll = async () => {
     const zip = new JSZip();
     const folder = zip.folder("images");
-
-    for (const [index, url] of Object.entries(convertedImages)) {
-      const response = await fetch(url);
-      const blob = await response.blob();
-      folder.file(getWebpFileName(images[index].name, newFileName), blob);
+  
+    // `convertedImages` nesnesini kontrol et
+    for (const [index, imageData] of Object.entries(convertedImages)) {
+      try {
+        const response = await fetch(imageData.url);
+  
+        if (!response.ok) {
+          console.error(`Failed to fetch image at index ${index}: ${response.statusText}`);
+          continue;
+        }
+  
+        const contentType = response.headers.get("Content-Type");
+        if (!contentType || !contentType.includes("image")) {
+          console.error(`Unexpected content type at index ${index}: ${contentType}`);
+          continue;
+        }
+  
+        const blob = await response.blob();
+        const fileName = getWebpFileName(images[index]?.name || '', imageData.altText);
+        folder.file(fileName, blob);
+      } catch (error) {
+        console.error(`Error fetching image at index ${index}: ${error.message}`);
+      }
     }
-
+  
+    // Zip dosyasını oluştur ve indir
     zip.generateAsync({ type: "blob" }).then((content) => {
       saveAs(content, "images.zip");
     });
   };
+  
+  
+  
+  
 
   const allConvertedAndGeotagged = images.length > 0 && images.every((_, index) => geotagged[index]);
+
 
   return (
     <div className="app-container">
@@ -213,21 +247,19 @@ function App() {
     <div className="button-group">
       <input
         type="text"
-        placeholder="New File Name (optional)"
-        value={newFileName}
-        onChange={(e) => setNewFileName(e.target.value)}
-        className="new-file-name-input"
+        value={fileNames[index]}
+        onChange={(e) => handleFileNameChange(index, e.target.value)}
       />
       {location && <button className="add-geotag-button" onClick={() => handleAddGeotag(index)}>Add Geotag</button>}
       {loading[index] && !geotagged[index] && <div className="loading-circle"></div>} {/* Add loading circle */}
       {geotagged[index] && (
-        <>
-          <a href={convertedImages[index]} download={getWebpFileName(image.name, newFileName)} className="ios-button">
-            Download
-          </a>
-          <FaCheckCircle className="checkmark-icon" /> {/* Add checkmark icon */}
-        </>
-      )}
+  <>
+    <a href={convertedImages[index].url} download={fileNames[index]} className="ios-button">
+      Download
+    </a>
+    <FaCheckCircle className="checkmark-icon" /> {/* Add checkmark icon */}
+  </>
+)}
       <button className="clear-button" onClick={() => handleClear(index)}><FaTimes /></button>
     </div>
   </li>
