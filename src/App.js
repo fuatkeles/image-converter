@@ -4,11 +4,14 @@ import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-lea
 import 'leaflet/dist/leaflet.css';
 import { GeoSearchControl, OpenStreetMapProvider } from 'leaflet-geosearch';
 import 'leaflet-geosearch/dist/geosearch.css';
+import L from 'leaflet'; // Leaflet'i içe aktarın
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
-import { FaUpload, FaTimes } from 'react-icons/fa'; // react-icons/fa modülünü içe aktar
+import { FaUpload, FaTimes, FaMapMarkerAlt, FaBars } from 'react-icons/fa'; // react-icons/fa modülünü içe aktar
 import './App.css'; // Yeni CSS dosyasını içe aktar
 import { FaCheckCircle } from 'react-icons/fa'; // Import the checkmark icon
+import ReactDOMServer from 'react-dom/server'; // ReactDOMServer'ı içe aktarın
+
 function LocationMarker({ location, setLocation }) {
   useMapEvents({
     click(e) {
@@ -16,7 +19,12 @@ function LocationMarker({ location, setLocation }) {
     },
   });
 
-  return location ? <Marker position={location} /> : null;
+  return location ? (
+    <Marker position={location} icon={L.divIcon({
+      className: 'custom-icon',
+      html: ReactDOMServer.renderToString(<FaMapMarkerAlt size={50} color="clack" />)
+    })} />
+  ) : null;
 }
 
 function SearchControl({ setLocation }) {
@@ -34,7 +42,14 @@ function SearchControl({ setLocation }) {
       retainZoomLevel: false,
       animateZoom: true,
       keepResult: true,
+      marker: {
+        icon: L.divIcon({
+          className: 'custom-icon',
+          html: ReactDOMServer.renderToString(<FaMapMarkerAlt size={50} color="black" />)
+        })
+      }
     });
+    
 
     map.addControl(searchControl);
 
@@ -61,12 +76,19 @@ function App() {
   const [isDragActive, setIsDragActive] = useState(false);
   const [fileNames, setFileNames] = useState([]);
   const [loading, setLoading] = useState({}); // Add this line to the state declarations
-  
+  const [menuActive, setMenuActive] = useState(false);
+
+  const toggleMenu = () => {
+    setMenuActive(!menuActive);
+  };
 
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
     setImages(files);
-    setFileNames(files.map(file => file.name));
+    setFileNames(files.map(file => file.name.replace(/\.[^/.]+$/, ""))); // Uzantıyı kaldır
+    setLoading(new Array(files.length).fill(false));
+    setGeotagged(new Array(files.length).fill(false));
+    setConvertedImages(new Array(files.length).fill(null));
   };
 
   const handleFileNameChange = (index, newFileName) => {
@@ -88,10 +110,11 @@ function App() {
     e.preventDefault();
     const files = Array.from(e.dataTransfer.files);
     setImages(files);
-    setFileNames(files.map(file => file.name));
+    setFileNames(files.map(file => file.name.replace(/\.[^/.]+$/, ""))); // Uzantıyı kaldır
     setIsDragActive(false);
   };
 
+  
   const handleConvert = async (index) => {
     const formData = new FormData();
     formData.append('image', images[index]);
@@ -212,12 +235,15 @@ function App() {
 
   return (
     <div className="app-container">
-      <nav className="navbar">
+     <nav className="navbar">
         <div className="navbar-brand">WebTagger</div>
-        <div className="navbar-links">
+        <div className={`navbar-links ${menuActive ? 'active' : ''}`}>
           <a href="#about" className="navbar-link">About</a>
           <button className="navbar-button login-button">Login</button>
           <button className="navbar-button signup-button">Sign Up</button>
+        </div>
+        <div className="hamburger-menu" onClick={toggleMenu}>
+          <FaBars size={24} />
         </div>
       </nav>
       <div className="top-container">
@@ -249,7 +275,8 @@ function App() {
         type="text"
         value={fileNames[index]}
         onChange={(e) => handleFileNameChange(index, e.target.value)}
-      />
+        className="file-name-input"
+        />
       {location && <button className="add-geotag-button" onClick={() => handleAddGeotag(index)}>Add Geotag</button>}
       {loading[index] && !geotagged[index] && <div className="loading-circle"></div>} {/* Add loading circle */}
       {geotagged[index] && (
