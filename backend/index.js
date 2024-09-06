@@ -75,6 +75,9 @@ app.post('/add-geotag', upload.single('image'), async (req, res) => {
   const { latitude, longitude, newFileName } = req.body;
   console.log('Received geotag data:', { latitude, longitude, newFileName });
   try {
+    // Dosya adındaki boşlukları "-" ile değiştir
+    const fileNameWithHyphens = newFileName.replace(/\s+/g, '-') + '.webp';
+
     const webpBuffer = await sharp(req.file.buffer).webp().toBuffer();
     const tempFilePath = path.join(__dirname, `temp-${Date.now()}.webp`);
 
@@ -84,15 +87,21 @@ app.post('/add-geotag', upload.single('image'), async (req, res) => {
     // Schedule file deletion within 1 minute
     scheduleFileDeletion(tempFilePath);
 
+    // Dosya adındaki "-" işaretlerini boşluk ile değiştir
+    const formattedFileName = newFileName.replace(/-/g, ' ');
+
     // Add EXIF metadata
     await exiftool.write(tempFilePath, {
       GPSLatitude: latitude,
       GPSLongitude: longitude,
       GPSLatitudeRef: latitude >= 0 ? 'N' : 'S',
       GPSLongitudeRef: longitude >= 0 ? 'E' : 'W',
-      ImageDescription: newFileName // Add the new file name as alt text
+      ImageDescription: formattedFileName, // Add the formatted file name as alt text
+      XPKeywords: formattedFileName // Add the formatted file name as keywords
     });
 
+    // Dosya adını değiştirmeden yanıtla
+    res.set('Content-Disposition', `attachment; filename="${fileNameWithHyphens}"`);
     res.sendFile(tempFilePath);
   } catch (error) {
     console.error('Error adding geotag:', error);

@@ -11,6 +11,8 @@ import { FaUpload, FaTimes, FaMapMarkerAlt, FaBars } from 'react-icons/fa'; // r
 import './App.css'; // Yeni CSS dosyasını içe aktar
 import { FaCheckCircle } from 'react-icons/fa'; // Import the checkmark icon
 import ReactDOMServer from 'react-dom/server'; // ReactDOMServer'ı içe aktarın
+import { ReactComponent as Logo } from './assets/WebTagger.svg';
+import { ProgressBar } from 'react-loader-spinner';
 
 function LocationMarker({ location, setLocation }) {
   useMapEvents({
@@ -131,36 +133,37 @@ function App() {
   };
 
   const handleAddGeotag = async (index) => {
-      const newFileName = fileNames[index].replace(/\s+/g, '_'); // Örnek: Dosya adındaki boşlukları alt çizgi ile değiştir
-      if (!location) {
-        console.error('Location is not set');
-        return;
-      }
-    
-      setLoading((prev) => ({ ...prev, [index]: true })); // Set loading to true
-    
-      const formData = new FormData();
-      formData.append('image', images[index]);
-      formData.append('latitude', location.lat);
-      formData.append('longitude', location.lng);
-      if (newFileName) {
-        formData.append('newFileName', newFileName.replace(/\s+/g, '-'));
-      }
-    
-      try {
-        const response = await axios.post('http://localhost:5001/add-geotag', formData, {
-          responseType: 'blob',
-        });
-        const url = URL.createObjectURL(response.data);
-        const altText = newFileName ? newFileName.replace(/\s+/g, '-') : images[index].name;
-        setConvertedImages((prev) => ({ ...prev, [index]: { url, altText } }));
-        setGeotagged((prev) => ({ ...prev, [index]: true }));
-      } catch (error) {
-        console.error('Error adding geotag:', error);
-      } finally {
-        setLoading((prev) => ({ ...prev, [index]: false })); // Set loading to false
-      }
-    };
+    const originalFileName = fileNames[index];
+    const newFileName = originalFileName.replace(/\s+/g, '-'); // Dosya adındaki boşlukları "-" ile değiştir
+    if (!location) {
+      console.error('Location is not set');
+      return;
+    }
+
+    setLoading((prev) => ({ ...prev, [index]: true })); // Set loading to true for this image
+
+    const formData = new FormData();
+    formData.append('image', images[index]);
+    formData.append('latitude', location.lat);
+    formData.append('longitude', location.lng);
+    if (newFileName) {
+      formData.append('newFileName', newFileName);
+    }
+
+    try {
+      const response = await axios.post('http://localhost:5001/add-geotag', formData, {
+        responseType: 'blob',
+      });
+      const url = URL.createObjectURL(response.data);
+      const altText = originalFileName; // Alt metin olarak orijinal dosya adını kullan
+      setConvertedImages((prev) => ({ ...prev, [index]: { url, altText } }));
+      setGeotagged((prev) => ({ ...prev, [index]: true }));
+    } catch (error) {
+      console.error('Error adding geotag:', error);
+    } finally {
+      setLoading((prev) => ({ ...prev, [index]: false })); // Set loading to false for this image
+    }
+  };
 
   const handleClear = (index) => {
     setImages((prev) => prev.filter((_, i) => i !== index));
@@ -187,7 +190,7 @@ function App() {
       const sanitizedFileName = newFileName.replace(/\s+/g, '-');
       return `${sanitizedFileName}.webp`;
     }
-    const nameWithoutExtension = originalName.replace(/\.[^/.]+$/, "");
+    const nameWithoutExtension = originalName.replace(/\.[^/.]+$/, "-");
     return `${nameWithoutExtension}.webp`;
   };
   
@@ -236,7 +239,9 @@ function App() {
   return (
     <div className="app-container">
      <nav className="navbar">
-        <div className="navbar-brand">WebTagger</div>
+        <div className="navbar-brand">
+          <Logo />
+        </div>
         <div className={`navbar-links ${menuActive ? 'active' : ''}`}>
           <a href="#about" className="navbar-link">About</a>
           <button className="navbar-button login-button">Login</button>
@@ -277,13 +282,24 @@ function App() {
         onChange={(e) => handleFileNameChange(index, e.target.value)}
         className="file-name-input"
         />
+        
       {location && <button className="add-geotag-button" onClick={() => handleAddGeotag(index)}>Add Geotag</button>}
-      {loading[index] && !geotagged[index] && <div className="loading-circle"></div>} {/* Add loading circle */}
+      {loading[index] && (
+              <ProgressBar
+                height="50"
+                width="200"
+                ariaLabel="progress-bar-loading"
+                wrapperStyle={{}}
+                wrapperClass="progress-bar-wrapper"
+                borderColor="#000000"
+                barColor="#44C4D4"
+              />
+            )}
       {geotagged[index] && (
   <>
-    <a href={convertedImages[index].url} download={fileNames[index]} className="ios-button">
-      Download
-    </a>
+    <a href={convertedImages[index].url} download={fileNames[index].replace(/\s+/g, '-')} className="ios-button">
+  Download
+</a>
     <FaCheckCircle className="checkmark-icon" /> {/* Add checkmark icon */}
   </>
 )}
@@ -292,12 +308,25 @@ function App() {
   </li>
 ))}
       </ul>
+      
       {allConvertedAndGeotagged && (
         <div className="actions-container">
           <button className="ios-button" onClick={handleDownloadAll}>Download All</button>
           <button className="ios-button" onClick={handleClearAll}>Clear All</button>
         </div>
       )}
+
+<footer className="footer">
+  <div className="footer-content">
+    <h2>How to Use</h2>
+    <p>1. Upload your images by dragging and dropping them into the upload area or by clicking the upload button.</p>
+    <p>2. Once uploaded, you can add geotags to your images by entering the location details.</p>
+    <p>3. After adding geotags, you can download the images individually or all at once.</p>
+  </div>
+  <div className="copyright">
+    &copy; 2024 <a href="https://www.linkedin.com/in/fuat-keles/" target="_blank" rel="noopener noreferrer">Fuat Keles</a>
+  </div>
+</footer>
     </div>
   );
 }

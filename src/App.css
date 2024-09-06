@@ -4,6 +4,50 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
+.footer {
+  width: 100%;
+  background-color: #f0f0f5; /* Açık gri arka plan rengi */
+  padding: 20px 0; /* İçerik etrafında boşluk */
+  
+}
+
+.footer-content {
+  max-width: 800px; /* İçeriğin genişliği */
+  margin: 0 auto; /* Ortala */
+  padding: 0 20px; /* İçerik etrafında yatay boşluk */
+  text-align: left; /* Metni sola yasla */
+}
+
+.footer h2 {
+  margin-bottom: 10px; /* Başlık altındaki boşluk */
+  font-size: 24px; /* Başlık boyutu */
+  color: #333; /* Başlık rengi */
+}
+
+.footer p {
+  margin: 5px 0; /* Paragraflar arasındaki boşluk */
+  font-size: 18px; /* Metin boyutu */
+  color: #666; /* Metin rengi */
+}
+
+.copyright {
+  margin-top: 20px; /* Üstten boşluk */
+  font-size: 18px; /* Metin boyutu */
+  color: #999; /* Metin rengi */
+  text-align: center; /* Metni ortala */
+  
+  padding: 10px;
+}
+
+.footer .copyright a {
+  color: #0073b1; /* LinkedIn mavi rengi */
+  text-decoration: none; /* Alt çizgi kaldır */
+}
+
+.footer .copyright a:hover {
+  text-decoration: underline; /* Üzerine gelindiğinde alt çizgi ekle */
+}
+
 .navbar {
   width: 100%;
   max-width: 1200px; /* Siyah arka plan rengi */
@@ -18,12 +62,21 @@ body {
 }
 
 .navbar-brand {
-  font-size: 24px;
+  font-size: 40px;
   font-weight: bold;
   color: #000000; /* Beyaz metin rengi */
   font-weight: 800;
 }
 
+.navbar-brand {
+  display: flex;
+  align-items: center;
+}
+
+.navbar-brand svg {
+  width: 200px; /* İstediğiniz genişlik */
+  height: auto; /* Oranları korumak için otomatik yükseklik */
+}
 .navbar-links {
   display: flex;
   gap: 15px;
@@ -88,6 +141,7 @@ body {
   width: 100%;
   max-width: 1200px;
   margin-bottom: 20px;
+  margin-top: 80px;
   gap: 20px; /* Harita ve dosya yükleme alanı arasına boşluk ekler */
 }
 
@@ -116,6 +170,7 @@ body {
   content: "No images to display. Please upload images."; /* Boş liste etiketi */
   color: #000000;
   font-size: 16px;
+  font-weight: 700;
   text-align: center;
 }
 
@@ -141,8 +196,8 @@ body {
 }
 
 .upload-container.active {
-  border-color: #00f;
-  color: #00f;
+  border-color: #0C556B;
+  color: #0C556B;
 }
 
 .upload-input {
@@ -208,7 +263,7 @@ body {
 }
 
 .ios-button {
-  background-color: #007aff;
+  background-color: #44C4D4;
   color: white;
   border: none;
   text-decoration: none;
@@ -221,13 +276,13 @@ body {
 }
 
 .ios-button:hover {
-  background-color: #005bb5;
+  background-color: #0C556B;
 }
 
 .clear-button {
   background-color: transparent;
   border: none;
-  color: red;
+  color: #000000;
   font-size: 20px;
   cursor: pointer;
   margin: 5px;
@@ -299,6 +354,13 @@ input :focus {
   display: none; /* Masaüstünde gizle */
 }
 
+.progress-bar-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 10px;
+}
+
 /* Mevcut CSS kodlarınız */
 
 @media (max-width: 768px) {
@@ -314,7 +376,7 @@ input :focus {
     justify-content: space-between;
   }
   .navbar-brand {
-    padding-left: 10px;
+    padding-left: 25px;
   }
 
   .navbar-links {
