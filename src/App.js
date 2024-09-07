@@ -122,7 +122,7 @@ function App() {
     formData.append('image', images[index]);
 
     try {
-      const response = await axios.post('http://localhost:5001/convert', formData, {
+      const response = await axios.post('https://image-converter-fuatkeles-projects.vercel.app/convert', formData, {
         responseType: 'blob',
       });
       const url = URL.createObjectURL(response.data);
@@ -151,7 +151,7 @@ function App() {
     }
 
     try {
-      const response = await axios.post('http://localhost:5001/add-geotag', formData, {
+      const response = await axios.post('https://image-converter-fuatkeles-projects.vercel.app/add-geotag', formData, {
         responseType: 'blob',
       });
       const url = URL.createObjectURL(response.data);
