@@ -98,6 +98,7 @@ app.post('/add-geotag', upload.single('image'), async (req, res) => {
       GPSLongitudeRef: longitude >= 0 ? 'E' : 'W',
       ImageDescription: formattedFileName, // Add the formatted file name as alt text
       XPKeywords: formattedFileName // Add the formatted file name as keywords
+      
     });
 
     // Dosya adını değiştirmeden yanıtla
